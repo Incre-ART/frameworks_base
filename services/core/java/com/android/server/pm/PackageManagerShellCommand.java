@@ -214,6 +214,9 @@ class PackageManagerShellCommand extends ShellCommand {
         }
 
         final PrintWriter pw = getOutPrintWriter();
+
+        pw.println("========= exec PackageManageShellCommand ==============");
+        pw.flush();
         try {
             switch (cmd) {
                 case "path":
@@ -3640,6 +3643,9 @@ class PackageManagerShellCommand extends ShellCommand {
     }
 
     private int runArtServiceCommand() {
+        final PrintWriter pw = getErrPrintWriter();
+        pw.println("=========== ART Service command ==============");
+        pw.flush();
         try (var in = ParcelFileDescriptor.dup(getInFileDescriptor());
                 var out = ParcelFileDescriptor.dup(getOutFileDescriptor());
                 var err = ParcelFileDescriptor.dup(getErrFileDescriptor())) {
