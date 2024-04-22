@@ -266,6 +266,19 @@ static void com_android_internal_os_RuntimeInit_nativeSetExitWithoutCleanup(JNIE
         jobject clazz, jboolean exitWithoutCleanup)
 {
     gCurRuntime->setExitWithoutCleanup(exitWithoutCleanup);
+    
+    if(android::base::GetBoolProperty("art.debug", false)) {
+      pid_t this_pid = getpid();
+      __android_log_print(ANDROID_LOG_DEBUG, "ArtDebug", "child process pid: %d", this_pid);
+      __android_log_print(ANDROID_LOG_DEBUG, "ArtDebug", "enter sleep");
+    }
+    while(android::base::GetBoolProperty("art.debug.wait", false)) {
+      __android_log_print(ANDROID_LOG_DEBUG, "ArtDebug", "sleeping");
+      sleep(5);
+    }
+    if(android::base::GetBoolProperty("art.debug", false)) {
+      __android_log_print(ANDROID_LOG_DEBUG, "ArtDebug", "resume execution");
+    }
 }
 
 /*
@@ -633,6 +646,8 @@ bool AndroidRuntime::parseCompilerRuntimeOption(const char* property,
  */
 int AndroidRuntime::startVm(JavaVM** pJavaVM, JNIEnv** pEnv, bool zygote, bool primary_zygote)
 {
+    std::cerr << "[DEBUG][" << __FILE__ << "][" << __FUNCTION__ << "]: start VM" << std::endl;
+    __android_log_print(ANDROID_LOG_DEBUG, "myRuntime", "start VM\n");
     JavaVMInitArgs initArgs;
     char propBuf[PROPERTY_VALUE_MAX];
     char jniOptsBuf[sizeof("-Xjniopts:")-1 + PROPERTY_VALUE_MAX];
@@ -690,6 +705,7 @@ int AndroidRuntime::startVm(JavaVM** pJavaVM, JNIEnv** pEnv, bool zygote, bool p
       kEMIntPortable,
       kEMIntFast,
       kEMJitCompiler,
+      KMyMode,
     } executionMode = kEMDefault;
     char localeOption[sizeof("-Duser.locale=") + PROPERTY_VALUE_MAX];
     char lockProfThresholdBuf[sizeof("-Xlockprofthreshold:")-1 + PROPERTY_VALUE_MAX];
@@ -782,6 +798,9 @@ int AndroidRuntime::startVm(JavaVM** pJavaVM, JNIEnv** pEnv, bool zygote, bool p
         executionMode = kEMIntFast;
     } else if (strcmp(propBuf, "int:jit") == 0) {
         executionMode = kEMJitCompiler;
+    } else if (strcmp(propBuf, "int:fuck") == 0) {
+        executionMode = KMyMode; 
+        __android_log_print(ANDROID_LOG_DEBUG, "myRuntime", "use my exectuion mode\n");
     }
 
     strcpy(jniOptsBuf, "-Xjniopts:");
@@ -960,6 +979,8 @@ int AndroidRuntime::startVm(JavaVM** pJavaVM, JNIEnv** pEnv, bool zygote, bool p
         addOption("-Xint:fast");
     } else if (executionMode == kEMJitCompiler) {
         addOption("-Xint:jit");
+    } else if(executionMode == KMyMode) {
+        addOption("-Xint");
     }
 
     // Extra options for JIT.
